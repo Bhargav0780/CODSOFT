@@ -1,0 +1,145 @@
+import tkinter as tk
+from tkinter import messagebox
+import json
+
+# File to store contacts
+CONTACTS_FILE = "contacts.json"
+
+# Load existing contacts from file
+def load_contacts():
+    try:
+        with open(CONTACTS_FILE, "r") as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+# Save contacts to file
+def save_contacts():
+    with open(CONTACTS_FILE, "w") as file:
+        json.dump(contacts, file, indent=4)
+
+# Add contact
+def add_contact():
+    name = name_entry.get()
+    phone = phone_entry.get()
+    email = email_entry.get()
+    address = address_entry.get()
+
+    if name and phone:
+        contacts[name] = {"Phone": phone, "Email": email, "Address": address}
+        save_contacts()
+        update_contact_list()
+        clear_entries()
+    else:
+        messagebox.showwarning("Warning", "Name and Phone are required!")
+
+# View all contacts
+def update_contact_list():
+    contact_list.delete(0, tk.END)
+    for name, details in contacts.items():
+        contact_list.insert(tk.END, f"{name} - {details['Phone']}")
+
+# Search contact
+def search_contact():
+    query = search_entry.get().lower()
+    contact_list.delete(0, tk.END)
+    
+    for name, details in contacts.items():
+        if query in name.lower() or query in details["Phone"]:
+            contact_list.insert(tk.END, f"{name} - {details['Phone']}")
+
+# Select contact from list
+def select_contact(event):
+    try:
+        selected = contact_list.get(contact_list.curselection())
+        name = selected.split(" - ")[0]
+        details = contacts.get(name, {})
+        name_entry.delete(0, tk.END)
+        name_entry.insert(0, name)
+        phone_entry.delete(0, tk.END)
+        phone_entry.insert(0, details.get("Phone", ""))
+        email_entry.delete(0, tk.END)
+        email_entry.insert(0, details.get("Email", ""))
+        address_entry.delete(0, tk.END)
+        address_entry.insert(0, details.get("Address", ""))
+    except:
+        pass
+
+# Update contact
+def update_contact():
+    name = name_entry.get()
+    if name in contacts:
+        contacts[name] = {
+            "Phone": phone_entry.get(),
+            "Email": email_entry.get(),
+            "Address": address_entry.get(),
+        }
+        save_contacts()
+        update_contact_list()
+        clear_entries()
+    else:
+        messagebox.showerror("Error", "Contact not found!")
+
+# Delete contact
+def delete_contact():
+    name = name_entry.get()
+    if name in contacts:
+        del contacts[name]
+        save_contacts()
+        update_contact_list()
+        clear_entries()
+    else:
+        messagebox.showerror("Error", "Contact not found!")
+
+# Clear entry fields
+def clear_entries():
+    name_entry.delete(0, tk.END)
+    phone_entry.delete(0, tk.END)
+    email_entry.delete(0, tk.END)
+    address_entry.delete(0, tk.END)
+
+# Load contacts
+contacts = load_contacts()
+
+# GUI Setup
+root = tk.Tk()
+root.title("Contact Manager")
+root.geometry("400x500")
+
+# Labels & Entry Fields
+tk.Label(root, text="Name:").pack()
+name_entry = tk.Entry(root, width=40)
+name_entry.pack()
+
+tk.Label(root, text="Phone:").pack()
+phone_entry = tk.Entry(root, width=40)
+phone_entry.pack()
+
+tk.Label(root, text="Email:").pack()
+email_entry = tk.Entry(root, width=40)
+email_entry.pack()
+
+tk.Label(root, text="Address:").pack()
+address_entry = tk.Entry(root, width=40)
+address_entry.pack()
+
+# Buttons
+tk.Button(root, text="Add Contact", command=add_contact).pack()
+tk.Button(root, text="Update Contact", command=update_contact).pack()
+tk.Button(root, text="Delete Contact", command=delete_contact).pack()
+
+# Search Field
+tk.Label(root, text="Search:").pack()
+search_entry = tk.Entry(root, width=30)
+search_entry.pack()
+tk.Button(root, text="Search", command=search_contact).pack()
+
+# Contact Listbox
+contact_list = tk.Listbox(root, width=50, height=10)
+contact_list.pack()
+contact_list.bind("<<ListboxSelect>>", select_contact)
+
+# Load contacts in listbox
+update_contact_list()
+
+root.mainloop()
